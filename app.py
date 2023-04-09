@@ -4,11 +4,14 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 from flask_sqlalchemy import SQLAlchemy
 import datetime
+import config
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///migrations.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SQLALCHEMY_DATABASE_URI'] = conn_str
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = False
 
 db = SQLAlchemy(app)
 
