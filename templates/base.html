@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure vNet Migration Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        .header {
+            background-color: #0078d4;
+            padding: 15px;
+            color: #fff;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            Azure vNet Migration Tool
+        </div>
+    </header>
+    <main class="container mt-5">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>
