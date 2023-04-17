@@ -1,10 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}
+Migration - vNet Migration Tool
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>vNet Migration</h2>
+    <form id="migration-form">
+        <div class="mb-3">
+            <label for="subscription" class="form-label">Select Subscription</label>
+            <select class="form-select" id="subscription" required>
+                <option value="">Choose a subscription</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="vnet" class="form-label">Select vNets</label>
+            <select class="form-select" id="vnet" multiple required>
+                <option value="">Choose vNets</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="spkrg" class="form-label">SPK Resource Group</label>
+            <input type="text" class="form-control" id="spkrg" required>
+        </div>
+        <div class="mb-3">
+            <label for="spkvnetname" class="form-label">SPK vNet Name</label>
+            <input type="text" class="form-control" id="spkvnetname" required>
+        </div>
+        <div class="mb-3">
+            <label for="spkpeeringname" class="form-label">SPK Peering Name</label>
+            <input type="text" class="form-control" id="spkpeeringname" required>
+        </div>
+        <div class="mb-3">
+            <label for="vwanrg" class="form-label">vWAN Resource Group</label>
+            <input type="text" class="form-control" id="vwanrg" required>
+        </div>
+        <div class="mb-3">
+            <label for="vhubname" class="form-label">vHub Name</label>
+            <input type="text" class="form-control" id="vhubname" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Migrate</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Fetch the available subscriptions
+        fetch("/subscriptions")
+            .then((response) => response.json())
+            .then((subscriptions) => {
+                const select = document.getElementById("subscription");
+                subscriptions.forEach((sub) => {
+                    const option = document.createElement("option");
+                    option.value = sub.subscription_id;
+                    option.textContent = sub.display_name;
+                    select.appendChild(option);
+                });
+            })
+            .catch((error) => console.error("Failed to fetch subscriptions:", error));
+
+        // Update vNets dropdown when the subscription is changed
+        document.getElementById("subscription").addEventListener("change", (event) => {
+            const subscriptionId = event.target.value;
+            if (subscriptionId) {
+                fetch("/vnets", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ subscription_id: subscriptionId }),
+                })
+                .then((response) => response.json())
+                .then((vnets) => {
+                    const select = document.getElementById("vnet");
+                    // Remove any existing options
+                    while (select.firstChild) {
+                        select.removeChild(select.firstChild);
+                    }
+                    // Add new options
+                    vnets.forEach((vnet) => {
+                        const option = document.createElement("option");
+                        option.value = vnet.name;
+                        option.textContent = vnet.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => console.error("Failed to fetch vNets:", error));
+            }
+        });
+    });
+</script>
+{% endblock %}

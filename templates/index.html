@@ -1,100 +1,79 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
+{% block title %}
+Azure VWAN Migration
+{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">Azure Network Migration</h1>
-    <div class="card">
+<!-- Hero Section -->
+<section class="jumbotron text-center">
+    <div class="container">
+        <h1 class="jumbotron-heading">Azure VWAN Migration</h1>
+        <p class="lead">Simplify and automate your Azure Virtual WAN migrations</p>
+        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Start Migration</a>
+    </div>
+</section>
+
+<!-- Introduction Section -->
+<section>
+    <div class="container">
+        <h2>Welcome to Azure VWAN and Express Route Migration</h2>
+        <p>Azure VWAN and Express Route  Migration is a web application designed to help you easily migrate and manage your Azure Virtual WAN resources. Our user-friendly interface allows you to input necessary details and migrate or rollback your Virtual WAN resources with just a few clicks. Stay organized and manage all your migrated vNets and pending migrations within a subscription in one place.</p>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="mt-4">
+    <div class="container">
+        <h2>Features</h2>
+        <div class="row">
+            <!-- Migrations S2S VPN to Azure vWAN -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Migrate to vWAN</h5>
+                        <p class="card-text">Seamlessly migrate your Azure Virtual WAN and Express Route resources with our easy-to-use web application.</p>
+                        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Start Migration</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Rollbacks from vWAN to S2S VPN -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Rollback</h5>
+                        <p class="card-text">Easily rollback any migration to revert changes to your classic Hub+Spoke resources.</p>
+                        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Rollback Migration</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Migrations S2S VPN to Express Route -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Migrate to Express Route</h5>
+                        <p class="card-text">Seamlessly migrate your S2S VPN resources to Express Route with our easy-to-use web application.</p>
+                        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Start Migration</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rollbacks Express Route to S2S VPN -->
+<div class="col-md-6">
+    <div class="card mb-4">
         <div class="card-body">
-            <form id="migration-form" class="mb-3" onsubmit="event.preventDefault(); migrate();">
-                <div class="mb-3">
-                    <label for="subscription" class="form-label">Subscription:</label>
-                    <select class="form-select" id="subscription" name="subscription"></select>
-                </div>
-                <div class="mb-3">
-                    <label for="vnet" class="form-label">VNet:</label>
-                    <select class="form-select" id="vnet" name="vnet"></select>
-                </div>
-                <button type="submit" class="btn btn-primary">Migrate</button>
-            </form>
+            <h5 class="card-title">Rollback</h5>
+            <p class="card-text">Easily rollback any migration to revert changes from Express Route to your 2S VPN resources.</p>
+            <a href="{{ url_for('migrate') }}" class="btn btn-primary">Rollback Migration</a>
         </div>
     </div>
-    <div id="result" class="mt-3"></div>
-    <div class="mt-5">
-        <h2 class="mb-4">Migration Dashboard</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Resource Group</th>
-                    <th scope="col">VNet Name</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Migration Date</th>
-                </tr>
-            </thead>
-            <tbody id="migration-table">
-                <!-- Table rows will be populated using JavaScript -->
-            </tbody>
-        </table>
-    </div>
+</div>
+
+   
+</section>
 {% endblock %}
 
-{% block scripts %}
-    <script>
-        const subscriptionSelect = document.getElementById('subscription');
-        const vnetSelect = document.getElementById('vnet');
-        const migrationTable = document.getElementById('migration-table');
-
-        async function fetchSubscriptions() {
-            const response = await fetch('/subscriptions');
-            const data = await response.json();
-            if (data.success) {
-                data.subscriptions.forEach(subscription => {
-                    const option = document.createElement('option');
-                    option.value = subscription.subscription_id;
-                    option.textContent = subscription.display_name;
-                    subscriptionSelect.appendChild(option);
-                });
-                fetchVpnVnets();
-            }
-        }
-
-        async function fetchVpnVnets() {
-            const subscriptionId = subscriptionSelect.value;
-            const response = await fetch(`/vpn_vnets?subscription_id=${subscriptionId}`);
-            const data = await response.json();
-            if (data.success) {
-                vnetSelect.innerHTML = '';
-                data.vpn_vnets.forEach(vnet => {
-                    const option = document.createElement('option');
-                    option.value = vnet.name;
-                    option.textContent = vnet.name;
-                    vnetSelect.appendChild(option);
-                });
-            }
-        }
-
-        async function fetchMigrationDashboard() {
-            // Implement the logic to fetch migration data and populate the table
-        }
-
-        async function migrate() {
-            const formData = new FormData(document.getElementById('migration-form'));
-            const response = await fetch('/migrate', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                alert('VNet migration successful');
-            } else {
-                alert(`Error: ${result.message}`);
-            }
-        }
-
-        subscriptionSelect.addEventListener('change', fetchVpnVnets);
-
-        fetchSubscriptions();
-        fetchMigrationDashboard();
-    </script>
-{% endblock %}
 
 
