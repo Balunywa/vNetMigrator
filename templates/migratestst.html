@@ -30,8 +30,8 @@ Migration - vNet Migration Tool
         </div>
 
         <div class="mb-3">
-            <label for="vhub" class="form-label">Select vWAN Hub</label>
-            <select class="form-select" id="vhub" required>
+            <label for="vwanhub" class="form-label">Select vWAN Hub</label>
+            <select class="form-select" id="vwanhub" required>
                 <option value="">Choose a vWAN Hub</option>
                 <!-- vWAN Hub options will be added dynamically -->
             </select>
@@ -39,6 +39,7 @@ Migration - vNet Migration Tool
         <button type="submit" class="btn btn-primary">Migrate</button>
     </form>
 </div>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -62,15 +63,20 @@ Migration - vNet Migration Tool
             if (subscriptionId) {
                 updateVnets(subscriptionId);
                 updateVirtualWans(subscriptionId);
+                 // Retrieve the value of the "vwan" select element
+        const vwanId = document.getElementById("vwan").value;
+        updateVwanHubs(vwanId);
+
             }
         });
 
-        document.getElementById("vwan").addEventListener("change", (event) => {
-            const vwanId = event.target.value;
-            if (vwanId) {
-                updateVwanHubs(vwanId);
-            }
-        });
+          // Update vWAN Hubs dropdown when the vWAN is changed
+  document.getElementById("vwan").addEventListener("change", (event) => {
+    const vwanId = event.target.value;
+    if (vwanId) {
+      updateVwanHubs(vwanId);
+    }
+  });
 
         function updateVnets(subscriptionId) {
             fetch("/vnets", {
@@ -97,7 +103,7 @@ Migration - vNet Migration Tool
             })
             .catch((error) => console.error("Failed to fetch vNets:", error));
         }
-       
+
         function updateVirtualWans(subscriptionId) {
             fetch("/virtualwans", {
                 method: "POST",
@@ -120,78 +126,39 @@ Migration - vNet Migration Tool
                     option.textContent = vwan.name;
                     select.appendChild(option);
                 });
-                // Update vWAN Hubs after vWANs have been updated
-                const vwanId = select.value;
-                if (vwanId) {
-                    updateVwanHubs(vwanId);
-                }
             })
             .catch((error) => console.error("Failed to fetch Virtual WANs:", error));
         }
-        function updateVwanHubs(vwanId) {
-            const subscriptionId = document.getElementById("subscription").value;
-        
-            fetch("/vwanhubs", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ vwan_id: vwanId, subscription_id: subscriptionId }),
-            })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch vWAN Hubs");
-                }
-                return response.json();
-            })
+
+         function updateVwanHubs(vwanId) {
+                const subscriptionId = document.getElementById("subscription").value; // Get the selected subscription_id
+            
+                fetch("/vwanhubs", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ vwan_id: vwanId, subscription_id: subscriptionId }), // Include subscription_id in the request
+                })
+
+            .then((response) => response.json())
             .then((data) => {
-                console.log(`Received data for vWAN Hubs for vWAN ID '${vwanId}':`, data);
-                const select = document.getElementById("vhub");
-                select.innerHTML = "";
-                data.forEach((vhub) => {
-                    console.log(`Adding vWAN Hub option: '${vhub.name}'`);
+                console.log(`Received data for vWAN Hubs for vWAN ID '${vwanId}':`, data); // Added for debugging
+                const select = document.getElementById("vwanhub");
+                select.innerHTML = ""; // Clear the existing options
+                data.forEach((vhubName) => {
+                    console.log(`Adding vWAN Hub option: '${vhubName}'`); // Added for debugging
                     const option = document.createElement("option");
-                    option.value = vhub.id;
-                    option.textContent = vhub.name;
+                    option.value = vhubName;  // Use vhubName directly
+                    option.textContent = vhubName;  // Use vhubName directly
                     select.appendChild(option);
                 });
             })
             .catch((error) => console.error("Failed to fetch vWAN Hubs:", error));
         }
         
-        
+
    
-
-document.getElementById("vwan").addEventListener("change", (event) => {
-    const vwanId = event.target.value;
-    if (vwanId) {
-        fetch("/vwanhubs", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ vwan_id: vwanId }),
-        })
-        .then((response) => response.json())
-        .then((vwanhubs) => {
-            console.log("vWAN Hubs fetched:", vwanhubs);
-            const select = document.getElementById("vhub");
-            select.innerHTML = ""; // Clear existing options
-            const defaultOption = document.createElement("option");
-            defaultOption.value = "";
-            defaultOption.textContent = "Choose a vWAN Hub";
-            select.appendChild(defaultOption);
-            vwanhubs.forEach((vhub) => {
-                const option = document.createElement("option");
-                option.value = vhub.id;
-                option.textContent = vhub.name;
-                select.appendChild(option);
-            });
-        })
-        .catch((error) => console.error("Failed to fetch vWAN Hubs:", error));
-    }
-});
-
         // Handle form submission
         document.getElementById("migration-form").addEventListener("submit", (event) => {
             event.preventDefault();
@@ -231,6 +198,8 @@ document.getElementById("vwan").addEventListener("change", (event) => {
         });
     });
 
-
 </script>
+
+
 {% endblock %}
+    

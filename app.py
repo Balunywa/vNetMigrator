@@ -6,14 +6,12 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.identity import ClientSecretCredential
-
+import json
 
 app = Flask(__name__)
 
 # Set your Azure AD credentials
-tenant_id = "86c63279-22a0-4ae4-8f75-b916ba629445"
-client_id = ""
-client_secret = ""
+
 
 # Authenticate using the ClientSecretCredential
 credential = ClientSecretCredential(tenant_id, client_id, client_secret)
@@ -110,47 +108,25 @@ def get_vwan_hubs(credential, subscription_id, vwan_id):
 
         network_client = NetworkManagementClient(credential, subscription_id)
         vwan_hubs = network_client.virtual_hubs.list()
-        
         result = []
+        
         for vhub in vwan_hubs:
             if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
                 result.append({
-                    'id': vwan.id,
-                    'name': vhub.name,
-                    'resource_group': resource_group,
-                    'location': vhub.location
+                    'id': vhub.id,
+                    'name': vhub.name
                 })
 
-        print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
+        if len(result) == 0:
+            print(f"No vWAN Hubs for vWAN ID '{vwan_id}'")
+        else:
+            print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
         
-        return jsonify(result)  # Assuming you are using Flask for the jsonify function
+        return result  # Return the list of dictionaries
     except Exception as e:
         print(f"Failed to get vWAN Hubs: {e}")
-        raise e
+        return []  # Return an empty list as fallback
 
-
-
-""""
-def get_vwan_hubs(credential, subscription_id, vwan_id):
-    try:
-        resource_group = vwan_id.split('/')[4]
-        vwan_name = vwan_id.split('/')[-1]
-
-        network_client = NetworkManagementClient(credential, subscription_id)
-        vwan_hubs = network_client.virtual_hubs.list()
-        result = []
-        for vhub in vwan_hubs:
-            if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
-    
-                result.append(vhub.name)
-
-        print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
-        
-        return jsonify(result) # this will return only names
-    except Exception as e:
-        print(f"Failed to get vWAN Hubs: {e}")
-        raise e
-"""
 
 
 
@@ -199,14 +175,18 @@ def vwanhubs():
     try:
         data = request.get_json()
         vwan_id = data['vwan_id']
+        subscription_id = data['subscription_id']  # Add subscription_id
         logging.info(f"Requested vWAN ID: {vwan_id}")
-        vwan_hubs = get_vwan_hubs(credential, vwan_id)
+        vwan_hubs = get_vwan_hubs(credential, subscription_id, vwan_id)  # Pass subscription_id
         logging.info(f"Retrieved vWAN Hubs: {vwan_hubs}")
         return jsonify(vwan_hubs)
     except Exception as e:
         logging.error(f"Failed to retrieve vWAN Hubs: {e}")
         return jsonify({'error': str(e)}), 500
-    
+
+
+
+
 
 @app.route('/migrate', methods=['GET', 'POST'])
 def migrate():
