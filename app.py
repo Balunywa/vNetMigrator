@@ -12,8 +12,8 @@ app = Flask(__name__)
 
 # Set your Azure AD credentials
 tenant_id = "86c63279-22a0-4ae4-8f75-b916ba629445"
-client_id = "932bb932-8e38-496c-be32-3fd55ca3d233"
-client_secret = "iIE8Q~JXJrS9mHO6mvTwA5nwrmIs4p14e2KmrcXX"
+client_id = ""
+client_secret = ""
 
 # Authenticate using the ClientSecretCredential
 credential = ClientSecretCredential(tenant_id, client_id, client_secret)
