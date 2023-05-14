@@ -7,12 +7,13 @@ from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.identity import ClientSecretCredential
 
+
 app = Flask(__name__)
 
 # Set your Azure AD credentials
-tenant_id = "46ebbfcd-0b34-421b-95b6-0d3be04f5baf"
-client_id = "b81d531a-5dd9-44df-8dec-f9af0856e796"
-client_secret = "D~-8Q~KjXg_KYycWnoWYoRQQcLGnodoxSv5rRbFt"
+tenant_id = "86c63279-22a0-4ae4-8f75-b916ba629445"
+client_id = "932bb932-8e38-496c-be32-3fd55ca3d233"
+client_secret = "iIE8Q~JXJrS9mHO6mvTwA5nwrmIs4p14e2KmrcXX"
 
 # Authenticate using the ClientSecretCredential
 credential = ClientSecretCredential(tenant_id, client_id, client_secret)
@@ -29,7 +30,7 @@ headers = {
 # Define the Graph API endpoint for listing service principals
 service_principals_url = "https://graph.microsoft.com/v1.0/servicePrincipals"
 
-subscription_id = "baba5760-b841-47cc-ad3f-0097b63b2ac7"
+subscription_id = "c8bc39b5-8f1b-4d8e-92e3-35e2a5bb8c31"
 
 resource_client = ResourceManagementClient(credential, subscription_id)
 
@@ -65,8 +66,6 @@ def migrate_vnet_to_vwan_hub(credential, subscription_id, spkrg, spkvnetname, sp
     except Exception as e:
         logging.error(f"Failed to migrate vNet: {e}")
         raise e
-
-
     
 def get_subscriptions(credential):
     try:
@@ -77,8 +76,6 @@ def get_subscriptions(credential):
         logging.error(f"Failed to get subscriptions: {e}")
         raise e
     
-    
-
 def get_vnets(credential, subscription_id):
     try:
         resource_client = ResourceManagementClient(credential, subscription_id)
@@ -87,6 +84,73 @@ def get_vnets(credential, subscription_id):
     except Exception as e:
         logging.error(f"Failed to get vNets: {e}")
         raise e
+
+def get_virtual_wans(credential, subscription_id):
+    network_client = NetworkManagementClient(credential, subscription_id)
+    virtual_wans = network_client.virtual_wans.list()
+    result = []
+
+    for vwan in virtual_wans:
+        result.append({
+            'id': vwan.id,
+            'name': vwan.name,
+            'resource_group': vwan.id.split('/')[4],
+            'location': vwan.location
+        })
+
+        # Get vWAN Hubs for each vWAN
+        get_vwan_hubs(credential, subscription_id, vwan.id)
+
+    return result
+
+def get_vwan_hubs(credential, subscription_id, vwan_id):
+    try:
+        resource_group = vwan_id.split('/')[4]
+        vwan_name = vwan_id.split('/')[-1]
+
+        network_client = NetworkManagementClient(credential, subscription_id)
+        vwan_hubs = network_client.virtual_hubs.list()
+        
+        result = []
+        for vhub in vwan_hubs:
+            if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
+                result.append({
+                    'id': vwan.id,
+                    'name': vhub.name,
+                    'resource_group': resource_group,
+                    'location': vhub.location
+                })
+
+        print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
+        
+        return jsonify(result)  # Assuming you are using Flask for the jsonify function
+    except Exception as e:
+        print(f"Failed to get vWAN Hubs: {e}")
+        raise e
+
+
+
+""""
+def get_vwan_hubs(credential, subscription_id, vwan_id):
+    try:
+        resource_group = vwan_id.split('/')[4]
+        vwan_name = vwan_id.split('/')[-1]
+
+        network_client = NetworkManagementClient(credential, subscription_id)
+        vwan_hubs = network_client.virtual_hubs.list()
+        result = []
+        for vhub in vwan_hubs:
+            if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
+    
+                result.append(vhub.name)
+
+        print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
+        
+        return jsonify(result) # this will return only names
+    except Exception as e:
+        print(f"Failed to get vWAN Hubs: {e}")
+        raise e
+"""
 
 
 
@@ -103,8 +167,7 @@ def subscriptions():
         return jsonify(subs)
     except Exception as e:
         logging.error(f"Failed to retrieve subscriptions: {e}")
-        return jsonify({'error': str(e)}), 500
-    
+        return jsonify({'error': str(e)}), 500  
     
     
 @app.route('/vnets', methods=['POST'])
@@ -116,6 +179,32 @@ def vnets():
         return jsonify(vnets)
     except Exception as e:
         logging.error(f"Failed to retrieve vNets: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+    
+@app.route('/virtualwans', methods=['POST'])
+def virtualwans():
+    try:
+        data = request.get_json()
+        subscription_id = data['subscription_id']
+        virtual_wans = get_virtual_wans(credential, subscription_id)
+        return jsonify(virtual_wans)
+    except Exception as e:
+        logging.error(f"Failed to retrieve Virtual WANs: {e}")
+        return jsonify({'error': str(e)}), 500 
+    
+
+@app.route('/vwanhubs', methods=['POST'])
+def vwanhubs():
+    try:
+        data = request.get_json()
+        vwan_id = data['vwan_id']
+        logging.info(f"Requested vWAN ID: {vwan_id}")
+        vwan_hubs = get_vwan_hubs(credential, vwan_id)
+        logging.info(f"Retrieved vWAN Hubs: {vwan_hubs}")
+        return jsonify(vwan_hubs)
+    except Exception as e:
+        logging.error(f"Failed to retrieve vWAN Hubs: {e}")
         return jsonify({'error': str(e)}), 500
     
 
