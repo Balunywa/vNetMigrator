@@ -1,21 +1,23 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Azure VWAN Migration
+Networ kMigrate Pro
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<section class="jumbotron text-center">
+<!-- Hero Section -->
+<section class="hero-section bg-primary text-white text-center p-5 mb-5">
     <div class="container">
-        <h1 class="jumbotron-heading">Azure VWAN Migration</h1>
+        <h1 class="display-4">Network Migrate Pro</h1>
         <p class="lead">Simplify and automate your Azure Virtual WAN migrations</p>
-        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Start Migration</a>
+        <a href="{{ url_for('migrate') }}" class="btn btn-light btn-lg">Start Migration</a>
     </div>
 </section>
 
+
 <!-- Introduction Section -->
-<section>
+<section class="py-5">
     <div class="container">
         <h2>Welcome to Azure VWAN and Express Route Migration</h2>
         <p>Azure VWAN and Express Route  Migration is a web application designed to help you easily migrate and manage your Azure Virtual WAN resources. Our user-friendly interface allows you to input necessary details and migrate or rollback your Virtual WAN resources with just a few clicks. Stay organized and manage all your migrated vNets and pending migrations within a subscription in one place.</p>
@@ -23,13 +25,13 @@ Azure VWAN Migration
 </section>
 
 <!-- Features Section -->
-<section class="mt-4">
+<section class="bg-light py-5">
     <div class="container">
-        <h2>Features</h2>
+        <h2 class="text-center mb-5">Features</h2>
         <div class="row">
             <!-- Migrations S2S VPN to Azure vWAN -->
-            <div class="col-md-6">
-                <div class="card mb-4">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
                     <div class="card-body">
                         <h5 class="card-title">Migrate to vWAN</h5>
                         <p class="card-text">Seamlessly migrate your Azure Virtual WAN and Express Route resources with our easy-to-use web application.</p>
@@ -38,8 +40,8 @@ Azure VWAN Migration
                 </div>
             </div>
             <!-- Rollbacks from vWAN to S2S VPN -->
-            <div class="col-md-6">
-                <div class="card mb-4">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
                     <div class="card-body">
                         <h5 class="card-title">Rollback</h5>
                         <p class="card-text">Easily rollback any migration to revert changes to your classic Hub+Spoke resources.</p>
@@ -50,8 +52,8 @@ Azure VWAN Migration
         </div>
         <div class="row">
             <!-- Migrations S2S VPN to Express Route -->
-            <div class="col-md-6">
-                <div class="card mb-4">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
                     <div class="card-body">
                         <h5 class="card-title">Migrate to Express Route</h5>
                         <p class="card-text">Seamlessly migrate your S2S VPN resources to Express Route with our easy-to-use web application.</p>
@@ -59,19 +61,18 @@ Azure VWAN Migration
                     </div>
                 </div>
             </div>
-
             <!-- Rollbacks Express Route to S2S VPN -->
-<div class="col-md-6">
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Rollback</h5>
-            <p class="card-text">Easily rollback any migration to revert changes from Express Route to your 2S VPN resources.</p>
-            <a href="{{ url_for('migrate') }}" class="btn btn-primary">Rollback Migration</a>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Rollback</h5>
+                        <p class="card-text">Easily rollback any migration to revert changes from Express Route to your S2S VPN resources.</p>
+                        <a href="{{ url_for('migrate') }}" class="btn btn-primary">Rollback Migration</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
-
-   
 </section>
 {% endblock %}
 
