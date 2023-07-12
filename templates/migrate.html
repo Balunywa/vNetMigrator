@@ -1,5 +1,5 @@
-
 {% extends 'base.html' %}
+
 {% block title %}
 Migration - vNet Migration Tool
 {% endblock %}
@@ -86,7 +86,8 @@ Migration - vNet Migration Tool
 
             const subscriptionId = document.getElementById("subscription").value;
             const vnets = Array.from(document.getElementById("vnet").selectedOptions).map(option => option.value);
-            const vhubname = document.getElementById("vhub").value;
+            const vwanHub = document.getElementById("vhub").value;
+            const propagateRouteTables = true; // setting the default value
 
             fetch("/migrate", {
                 method: "POST",
@@ -96,8 +97,8 @@ Migration - vNet Migration Tool
                 body: JSON.stringify({
                     subscription_id: subscriptionId,
                     vnets: vnets,
-                    vwanrg: vwanrg,
-                    vhubname: vhubname
+                    vwanHub: vwanHub,
+                    propagate_route_tables: propagateRouteTables
                 }),
             })
             .then((response) => response.json())
@@ -201,4 +202,3 @@ function updateVwanHubs(vwanId) {
 }
 </script>
 {% endblock %}
-
