@@ -104,13 +104,13 @@ def migrate_vnet_to_vwan_hub(vnets, spkrg, vwanrg, vhubname):
 
         for vnet_name in vnets:
             vnet_resource_group = spkrg
-            vnet = network_client.virtual_networks.get(vnet_resource_group, vnet_name)
-            vnet_id = vnet.id
+            vnet = vnets
+            vnet_id = "/subscriptions/c8bc39b5-8f1b-4d8e-92e3-35e2a5bb8c31/resourceGroups/testlab/providers/Microsoft.Network/virtualNetworks/testvwanapp"
 
             network_client.hub_virtual_network_connections.begin_create_or_update(
                 vwanrg,
                 vhubname,
-                vnet_name,
+                vnets,
                 {
                     'remote_virtual_network': {
                         'id': vnet_id
@@ -181,10 +181,11 @@ def migrate():
             data = request.get_json()
             logging.info(f"Received data: {data}")
 
-            vnets = data["vnets"]
-            spkrg = data["spkrg"]
-            vwanrg = data["vwanrg"]
-            vhubname = data["vhubname"]
+            vnets = "testvwanapp"
+            spkrg = "testlab"
+            vwanrg = "TAACS-Connectivity-RG"
+            vhubname = "TAACS-Connectivity-East-US"
+
 
             # Perform migration operation here...
             migrate_vnet_to_vwan_hub(vnets, spkrg, vwanrg, vhubname)
