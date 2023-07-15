@@ -1,9 +1,11 @@
-import os
 import logging
+from flask import Flask, render_template, request, jsonify
 from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 from azure.mgmt.resource import ResourceManagementClient
+
+app = Flask(__name__)
 
 # Set your Azure AD credentials
 tenant_id = "86c63279-22a0-4ae4-8f75-b916ba629445"
@@ -20,16 +22,44 @@ network_client = NetworkManagementClient(credential, subscription_id)
 
 logging.basicConfig(level=logging.INFO)
 
-def get_subscriptions(credential):
+
+@app.route('/')
+def index():
+    # Fetch subscriptions from Azure
+    subscriptions = get_subscriptions()
+    return render_template('index.html', subscriptions=subscriptions)
+
+
+@app.route('/subscriptions', methods=['GET'])
+def get_subscriptions():
     subscription_client = SubscriptionClient(credential)
     subscriptions = subscription_client.subscriptions.list()
-    return [sub.as_dict() for sub in subscriptions]
+    result = []
+    for sub in subscriptions:
+        result.append({
+            'subscription_id': sub.subscription_id,
+            'display_name': sub.display_name
+        })
+    return jsonify(result)
 
-def get_vnets(subscription_id):
-    vnets = resource_client.resources.list(filter="resourceType eq 'Microsoft.Network/virtualNetworks'")
-    return [vnet.as_dict() for vnet in vnets]
 
-def get_virtual_wans(subscription_id):
+@app.route('/vnets', methods=['GET'])
+def get_vnets():
+    subscription_id = request.args.get('subscription_id')
+    vnets = resource_client.resources.list(filter=f"subscriptionId eq '{subscription_id}' and resourceType eq 'Microsoft.Network/virtualNetworks'")
+    result = []
+    for vnet in vnets:
+        result.append({
+            'id': vnet.id,
+            'name': vnet.name,
+            'resource_group': vnet.id.split('/')[4]
+        })
+    return jsonify(result)
+
+
+@app.route('/virtualwans', methods=['GET'])
+def get_virtual_wans():
+    subscription_id = request.args.get('subscription_id')
     virtual_wans = network_client.virtual_wans.list()
     result = []
     for vwan in virtual_wans:
@@ -39,28 +69,78 @@ def get_virtual_wans(subscription_id):
             'resource_group': vwan.id.split('/')[4],
             'location': vwan.location
         })
-    return result
+    return jsonify(result)
+
+@app.route('/vwanhubs', methods=['GET'])
+def get_vwan_hubs_endpoint():
+    vwan_id = request.args.get('vwan_id')
+    subscription_id = request.args.get('subscription_id')
+    return jsonify(get_vwan_hubs(vwan_id, subscription_id))
+
 
 def get_vwan_hubs(vwan_id, subscription_id):
-    vwan_hubs = network_client.virtual_hubs.list()
-    result = []
-    for vhub in vwan_hubs:
-        if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
-            result.append({
-                'id': vhub.id,
-                'name': vhub.name
-            })
-    return result
+    try:
+        resource_group = vwan_id.split('/')[4]
+        vwan_name = vwan_id.split('/')[-1]
 
-def get_default_route_table_id(vwan_hub_name, vwan_resource_group):
-    vwan_hubs = network_client.virtual_hubs.list()
-    for vhub in vwan_hubs:
-        if vhub.name == vwan_hub_name and vhub.id.split('/')[4] == vwan_resource_group:
-            return vhub.route_table.id
-    return None
+        network_client = NetworkManagementClient(credential, subscription_id)
+        vwan_hubs = network_client.virtual_hubs.list(resource_group_name=resource_group)
+        result = []
+
+        for vhub in vwan_hubs:
+            if vhub.virtual_wan and vhub.virtual_wan.id == vwan_id:
+                result.append({
+                    'id': vhub.id,
+                    'name': vhub.name
+                })
+
+        if len(result) == 0:
+            print(f"No vWAN Hubs for vWAN ID '{vwan_id}'")
+        else:
+            print(f"vWAN Hubs for vWAN ID '{vwan_id}': {result}")
+
+        return result  # Return the list of dictionaries
+    except Exception as e:
+        print(f"Failed to get vWAN Hubs: {e}")
+        return []  # Return an empty list as fallback
 
 
-def migrate_vnet_to_vwan_hub(vnet_id, vnet_resource_group, vwan_resource_group, vwan_hub_name, connection_name, default_route_table_id):
+
+@app.route('/migrate', methods=['GET', 'POST'])
+def migrate():
+    if request.method == 'GET':
+        return render_template('migrate.html')
+    elif request.method == 'POST':
+        # Fetch data from the frontend
+        data = request.get_json()
+        subscription_id = data['subscription_id']
+        vnet = data['vnet']
+        vwan_hub_name = data['vwan_hub_name']
+        vnet_resource_group = data['vnet_resource_group']
+        vwan_resource_group = data['vwan_resource_group']
+        propagate_route_tables = data['propagate_route_tables']
+
+        # Perform vNet migration to vWAN Hub
+        migrate_vnet_to_vwan_hub(subscription_id, vnet, vnet_resource_group, vwan_resource_group, vwan_hub_name, propagate_route_tables)
+
+        return jsonify({'result': 'Migration initiated successfully.'})
+
+
+
+def migrate_vnet_to_vwan_hub(subscription_id, vnet, vnet_resource_group, vwan_resource_group, vwan_hub_name, propagate_route_tables):
+    vnet_id = vnet['id']
+    connection_name = f"{vnet_id}-{vwan_hub_name}-connection"
+    default_route_table_id = get_default_route_table_id(vwan_hub_name, vwan_resource_group)
+    if not default_route_table_id:
+        logging.error("Default route table ID not found for the specified vWAN Hub.")
+        return
+
+    migrate_vnet_to_vwan_hub_single(subscription_id, vnet_id, vnet_resource_group, vwan_resource_group,
+                                    vwan_hub_name, connection_name, default_route_table_id, propagate_route_tables)
+
+
+def migrate_vnet_to_vwan_hub_single(subscription_id, vnet_id, vnet_resource_group, vwan_resource_group, vwan_hub_name,
+                                    connection_name, default_route_table_id, propagate_route_tables):
     response = network_client.hub_virtual_network_connections.begin_create_or_update(
         resource_group_name=vwan_resource_group,
         virtual_hub_name=vwan_hub_name,
@@ -80,7 +160,10 @@ def migrate_vnet_to_vwan_hub(vnet_id, vnet_resource_group, vwan_resource_group, 
                             {
                                 "id": default_route_table_id
                             }
-                        ]
+                        ],
+                        "labels": {
+                            "default": propagate_route_tables
+                        }
                     },
                 }
             },
@@ -89,16 +172,8 @@ def migrate_vnet_to_vwan_hub(vnet_id, vnet_resource_group, vwan_resource_group, 
 
     logging.info(f"Migration response: {response}")
 
-if __name__ == '__main__':
-    # Define your data here
-    vnet_id = "/subscriptions/c8bc39b5-8f1b-4d8e-92e3-35e2a5bb8c31/resourceGroups/TAACS-Connectivity-RG/providers/Microsoft.Network/virtualNetworks/Contivity-DR"
-    vnet_resource_group = "TAACS-Connectivity-RG"
-    vwan_resource_group = "TAACS-Connectivity-RG"
-    vwan_hub_name = "TAACS-Connectivity-East-US"
-    connection_name = "migration-connection"
-    default_route_table_id = "/subscriptions/c8bc39b5-8f1b-4d8e-92e3-35e2a5bb8c31/resourceGroups/TAACS-Connectivity-RG/providers/Microsoft.Network/virtualHubs/TAACS-Connectivity-East-US/hubRouteTables/default"
 
-    # Perform vNet migration to vWAN Hub
-    migrate_vnet_to_vwan_hub(vnet_id, vnet_resource_group, vwan_resource_group, vwan_hub_name, connection_name, default_route_table_id)
+if __name__ == '__main__':
+    app.run()
 
 
