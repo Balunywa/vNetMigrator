@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Create HubVirtualNetworkConnection</title>
+</head>
+<body>
+<h1>Create HubVirtualNetworkConnection</h1>
+<p>This page allows you to create a HubVirtualNetworkConnection using the Azure SDK for Python.</p>
+<form action="/create" method="post">
+<input type="text" name="subscription_id" placeholder="Subscription ID">
+<input type="text" name="resource_group" placeholder="Resource group">
+<input type="text" name="virtual_hub" placeholder="Virtual hub name">
+<input type="text" name="virtual_hub_id" placeholder="Virtual hub ID">
+<input type="text" name="connection_name" placeholder="Connection name">
+<input type="text" name="remote_virtual_network_id" placeholder="Remote virtual network ID">
+<input type="submit" value="Create">
+</form>
+<script>
+function getArgs() {
+  var args = {};
+  for (var i = 0; i < document.forms[0].elements.length; i++) {
+    var element = document.forms[0].elements[i];
+    args[element.name] = element.value;
+  }
+  return args;
+}
+
+function create() {
+  var args = getArgs();
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/create", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.send(JSON.stringify(args));
+}
+
+document.getElementById("create").addEventListener("click", create);
+
+function fetch() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "/create", true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      var response = JSON.parse(xhr.responseText);
+      console.log(response);
+    } else {
+      console.log("Error: " + xhr.status);
+    }
+  };
+  xhr.send();
+}
+
+document.getElementById("fetch").addEventListener("click", fetch);
+</script>
+</body>
+</html>
+
+

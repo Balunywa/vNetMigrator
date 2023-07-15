@@ -5,48 +5,63 @@ Migration - vNet Migration Tool
 {% endblock %}
 
 {% block content %}
-<div class="container">
 
-    <!-- Hero Section -->
-    <div class="jumbotron hero-section bg-primary text-white text-center p-5 mb-5">
-        <h1 class="display-4">Hub + Spoke to vWAN Migration</h1>
-        <p class="lead">A user-friendly tool to migrate your virtual networks to Azure Virtual WAN.</p>
+<body>
+    <div class="container">
+
+        <!-- Hero Section -->
+        <div class="jumbotron hero-section bg-primary text-white text-center p-5 mb-5">
+            <h1 class="display-4">Hub + Spoke to vWAN Migration</h1>
+            <p class="lead">A user-friendly tool to migrate your virtual networks to Azure Virtual WAN.</p>
+        </div>
+
+        <form id="migration-form" action="/migrate" method="POST">
+
+            <div class="mb-3">
+                <label for="subscription" class="form-label">Select Subscription</label>
+                <select class="form-select" id="subscription" required>
+                    <option value="">Choose a subscription</option>
+                    {% for sub in subscriptions %}
+                        <option value="{{ sub.subscription_id }}">{{ sub.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="vnet" class="form-label">Select vNets</label>
+                <select class="form-select" id="vnet" multiple required>
+                    <option value="">Choose vNets</option>
+                    {% for vnet in vnets %}
+                        <option value="{{ vnet.id }}">{{ vnet.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="vwan" class="form-label">Select Virtual WAN</label>
+                <select class="form-select" id="vwan" required>
+                    <option value="">Choose a Virtual WAN</option>
+                    {% for vwan in virtualwans %}
+                        <option value="{{ vwan.id }}">{{ vwan.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="vhub" class="form-label">Select vWAN Hub</label>
+                <select class="form-select" id="vhub" required>
+                    <option value="">Choose a vWAN Hub</option>
+                    {% for vhub in vwanhubs %}
+                        <option value="{{ vhub.name }}">{{ vhub.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="migrate-btn">Migrate</button>
+
+        </form>
     </div>
 
-    <form id="migration-form">
-
-        <div class="mb-3">
-            <label for="subscription" class="form-label">Select Subscription</label>
-            <select class="form-select" id="subscription" required>
-                <option value="">Choose a subscription</option>
-            </select>
-        </div>
-        
-        <div class="mb-3">
-            <label for="vnet" class="form-label">Select vNets</label>
-            <select class="form-select" id="vnet" multiple required>
-                <option value="">Choose vNets</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="vwan" class="form-label">Select Virtual WAN</label>
-            <select class="form-select" id="vwan" required>
-                <option value="">Choose a Virtual WAN</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="vhub" class="form-label">Select vWAN Hub</label>
-            <select class="form-select" id="vhub" required>
-                <option value="">Choose a vWAN Hub</option>
-            </select>
-        </div>
-        
-        <button type="submit" class="btn btn-primary" id="migrate-btn">Migrate</button>
-
-    </form>
-</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -80,48 +95,47 @@ Migration - vNet Migration Tool
             updateVwanHubs(vwanId);
         }
     });
+    document.getElementById("migration-form").addEventListener("submit", (event) => {
+        event.preventDefault();
     
-// Handle form submission
-document.getElementById("migration-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const subscriptionId = document.getElementById("subscription").value;
-    const vnetSelect = document.getElementById("vnet");
-    const selectedVnet = vnetSelect.options[vnetSelect.selectedIndex];
-    const vnet = {
-        id: selectedVnet.value,
-        name: selectedVnet.textContent,
-        resource_group: selectedVnet.dataset.resourceGroup,
-    };
-    const vwanHub = document.getElementById("vhub").value;
-    const propagateRouteTables = true; // setting the default value
-    const vnetResourceGroup = document.getElementById("vnet-resource-group").value; // Get the vNet resource group value
-    const vwanResourceGroup = document.getElementById("vwan-resource-group").value; // Get the vWAN resource group value
-
-    fetch("/migrate", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            subscription_id: subscriptionId,
-            vnet: vnet, // Pass the selected vNet as a single object
-            vwan_hub_name: vwanHub,
-            vnet_resource_group: vnetResourceGroup, // Include vNet resource group
-            vwan_resource_group: vwanResourceGroup, // Include vWAN resource group
-            propagate_route_tables: propagateRouteTables
-        }),
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.error) {
-            console.error("Failed to migrate:", data.error);
-        } else {
-            console.log("Migration successful:", data.result);
-        }
-    })
-    .catch((error) => console.error("Failed to send migration request:", error));
-});
+        const subscriptionId = document.getElementById("subscription").value;
+        const vnetSelect = document.getElementById("vnet");
+        const selectedVnet = vnetSelect.options[vnetSelect.selectedIndex];
+        const vnet = {
+            id: selectedVnet.value,
+            name: selectedVnet.textContent,
+            resource_group: selectedVnet.dataset.resourceGroup,
+        };
+        const vwanHub = document.getElementById("vhub").value;
+        const propagateRouteTables = true; // setting the default value
+        const vnetResourceGroup = document.getElementById("vnet-resource-group").value; // Get the vNet resource group value
+        const vwanResourceGroup = document.getElementById("vwan-resource-group").value; // Get the vWAN resource group value
+    
+        fetch("/migrate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                subscription_id: subscriptionId,
+                vnet: vnet, // Pass the selected vNet as a single object
+                vwan_hub_name: vwanHub,
+                vnet_resource_group: vnetResourceGroup, // Include vNet resource group
+                vwan_resource_group: vwanResourceGroup, // Include vWAN resource group
+                propagate_route_tables: propagateRouteTables
+            }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.error) {
+                console.error("Failed to migrate:", data.error);
+            } else {
+                console.log("Migration successful:", data.result);
+            }
+        })
+        .catch((error) => console.error("Failed to send migration request:", error));
+    });
+    
 
 
     
@@ -205,7 +219,11 @@ document.getElementById("migration-form").addEventListener("submit", (event) => 
             .catch((error) => console.error("Failed to fetch vWAN Hubs:", error));
     }
     
+    
 </script>
 {% endblock %}
+
+
+
 
 
