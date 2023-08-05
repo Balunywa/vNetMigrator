@@ -5,6 +5,7 @@ azure-mgmt-core==1.4.0
 azure-mgmt-network==23.0.0
 azure-mgmt-resource==23.0.0
 azure-mgmt-subscription==3.1.1
+azure-mgmt-policyinsights==1.0.0
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -35,8 +36,4 @@ SQLAlchemy==2.0.9
 typing_extensions==4.5.0
 urllib3==1.26.15
 Werkzeug==2.2.3
-azure-identity==1.7.3
-azure-mgmt-policyinsights==1.0.0
-azure-mgmt-resource==22.0.0
-msal==1.16.0
 

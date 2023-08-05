@@ -61,234 +61,138 @@ Migration - vNet Migration Tool
     </div>
 
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // Fetch the available subscriptions
-        fetch("/subscriptions")
-            .then((response) => response.json())
-            .then((subscriptions) => {
-                const select = document.getElementById("subscription");
-                subscriptions.forEach((sub) => {
-                    const option = document.createElement("option");
-                    option.value = sub.subscription_id;
-                    option.textContent = sub.display_name;
-                    select.appendChild(option);
-                });
-            })
-            .catch((error) => console.error("Failed to fetch subscriptions:", error));
-    });
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch("/subscriptions")
+                .then((response) => response.json())
+                .then((subscriptions) => {
+                    const select = document.getElementById("subscription");
+                    subscriptions.forEach((sub) => {
+                        const option = document.createElement("option");
+                        option.value = sub.subscription_id;
+                        option.textContent = sub.display_name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => console.error("Failed to fetch subscriptions:", error));
+        });
     
-    // Update vNets dropdown when the subscription is changed
-    document.getElementById("subscription").addEventListener("change", (event) => {
-        const subscriptionId = event.target.value;
-        if (subscriptionId) {
-            updateVnets(subscriptionId);
-            updateVirtualWans(subscriptionId);
-        }
-    });
-    
-    document.getElementById("vwan").addEventListener("change", (event) => {
-        const vwanId = event.target.value;
-        if (vwanId) {
-            updateVwanHubs(vwanId);
-        }
-    });
-    document.getElementById("migration-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-    
-        const subscriptionId = document.getElementById("subscription").value;
-        const vnetSelect = document.getElementById("vnet");
-        const selectedVnet = vnetSelect.options[vnetSelect.selectedIndex];
-        const vnet = {
-            id: selectedVnet.value,
-            name: selectedVnet.textContent,
-            resource_group: selectedVnet.dataset.resourceGroup,
-        };
-        const vwanHub = document.getElementById("vhub").value;
-        const propagateRouteTables = true; // setting the default value
-        const vnetResourceGroup = document.getElementById("vnet-resource-group").value; // Get the vNet resource group value
-        const vwanResourceGroup = document.getElementById("vwan-resource-group").value; // Get the vWAN resource group value
-    
-        fetch("/migrate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                subscription_id: subscriptionId,
-                vnet: vnet, // Pass the selected vNet as a single object
-                vwan_hub_name: vwanHub,
-                vnet_resource_group: vnetResourceGroup, // Include vNet resource group
-                vwan_resource_group: vwanResourceGroup, // Include vWAN resource group
-                propagate_route_tables: propagateRouteTables
-            }),
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.error) {
-                console.error("Failed to migrate:", data.error);
-            } else {
-                console.log("Migration successful:", data.result);
+        document.getElementById("subscription").addEventListener("change", (event) => {
+            const subscriptionId = event.target.value;
+            if (subscriptionId) {
+                updateVnets(subscriptionId);
+                updateVirtualWans(subscriptionId);
             }
-        })
-        .catch((error) => console.error("Failed to send migration request:", error));
-    });
+        });
     
-
-
+        document.getElementById("vwan").addEventListener("change", (event) => {
+            const vwanId = event.target.value;
+            if (vwanId) {
+                updateVwanHubs(vwanId);
+            }
+        });
     
-    function updateVnets(subscriptionId) {
-        fetch("/vnets", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ subscription_id: subscriptionId }),
-        })
+        document.getElementById("migration-form").addEventListener("submit", (event) => {
+            event.preventDefault();
+        
+            const subscriptionId = document.getElementById("subscription").value;
+            const vnetSelect = document.getElementById("vnet");
+            const selectedVnet = vnetSelect.options[vnetSelect.selectedIndex];
+            const vnet = {
+                id: selectedVnet.value,
+                name: selectedVnet.textContent,
+                resource_group: selectedVnet.dataset.resourceGroup,
+            };
+            const vwanHub = document.getElementById("vhub").value;
+            const propagateRouteTables = true; // setting the default value
+            const vnetResourceGroup = document.getElementById("vnet-resource-group").value; // Get the vNet resource group value
+            const vwanResourceGroup = document.getElementById("vwan-resource-group").value; // Get the vWAN resource group value
+        
+            fetch("/migrate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    subscription_id: subscriptionId,
+                    vnet: vnet, // Pass the selected vNet as a single object
+                    vwan_hub_name: vwanHub,
+                    vnet_resource_group: vnetResourceGroup, // Include vNet resource group
+                    vwan_resource_group: vwanResourceGroup, // Include vWAN resource group
+                    propagate_route_tables: propagateRouteTables
+                }),
+            })
             .then((response) => response.json())
-            .then((vnets) => {
-                const select = document.getElementById("vnet");
-                select.innerHTML = "";
-                vnets.forEach((vnet) => {
-                    const option = document.createElement("option");
-                    option.value = vnet.name;
-                    option.textContent = vnet.name;
-                    option.dataset.resourceGroup = vnet.resource_group;
-                    select.appendChild(option);
-                });
-            })
-            .catch((error) => console.error("Failed to fetch vNets:", error));
-    }
-    
-    function updateVirtualWans(subscriptionId) {
-        fetch("/virtualwans", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ subscription_id: subscriptionId }),
-        })
-            .then((response) => response.json())
-            .then((virtualwans) => {
-                const select = document.getElementById("vwan");
-                select.innerHTML = "";
-                virtualwans.forEach((vwan) => {
-                    const option = document.createElement("option");
-                    option.value = vwan.id;
-                    option.textContent = vwan.name;
-                    select.appendChild(option);
-                });
-                const vwanId = select.value;
-                if (vwanId) {
-                    updateVwanHubs(vwanId);
-                }
-            })
-            .catch((error) => console.error("Failed to fetch Virtual WANs:", error));
-    }
-    
-    
-    document.addEventListener("DOMContentLoaded", () => {
-        // Fetch the available subscriptions
-        fetch("/subscriptions")
-            .then((response) => response.json())
-            .then((subscriptions) => {
-                const select = document.getElementById("subscription");
-                subscriptions.forEach((sub) => {
-                    const option = document.createElement("option");
-                    option.value = sub.subscription_id;
-                    option.textContent = sub.display_name;
-                    select.appendChild(option);
-                });
-            })
-            .catch((error) => console.error("Failed to fetch subscriptions:", error));
-    });
-    
-    // Update vNets dropdown when the subscription is changed
-    document.getElementById("subscription").addEventListener("change", (event) => {
-        const subscriptionId = event.target.value;
-        if (subscriptionId) {
-            updateVnets(subscriptionId);
-        }
-    });
-    
-    function updateVnets(subscriptionId) {
-        fetch(`/vnets?subscription_id=${subscriptionId}`)
-            .then((response) => response.json())
-            .then((vnets) => {
-                const select = document.getElementById("vnet");
-                select.innerHTML = "";
-                vnets.forEach((vnet) => {
-                    const option = document.createElement("option");
-                    option.value = vnet.id;
-                    option.textContent = vnet.name;
-                    select.appendChild(option);
-                });
-            })
-            .catch((error) => console.error("Failed to fetch vNets:", error));
-    }
-    
-    // Fetch Virtual WANs when the subscription is changed
-    document.getElementById("subscription").addEventListener("change", (event) => {
-        const subscriptionId = event.target.value;
-        if (subscriptionId) {
-            updateVirtualWans(subscriptionId);
-        }
-    });
-    
-    function updateVirtualWans(subscriptionId) {
-        fetch(`/virtualwans?subscription_id=${subscriptionId}`)
-            .then((response) => response.json())
-            .then((virtualwans) => {
-                const select = document.getElementById("vwan");
-                select.innerHTML = "";
-                virtualwans.forEach((vwan) => {
-                    const option = document.createElement("option");
-                    option.value = vwan.id;
-                    option.textContent = vwan.name;
-                    select.appendChild(option);
-                });
-            })
-            .catch((error) => console.error("Failed to fetch Virtual WANs:", error));
-    }
-    
-    // Fetch vWAN Hubs when the Virtual WAN is changed
-    document.getElementById("vwan").addEventListener("change", (event) => {
-        const vwanId = event.target.value;
-        if (vwanId) {
-            updateVwanHubs(vwanId);
-        }
-    });
-    
-    function updateVwanHubs(vwanId) {
-        const subscriptionId = document.getElementById("subscription").value;
-    
-        fetch("/vwanhubs", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ vwan_id: vwanId, subscription_id: subscriptionId }),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch vWAN Hubs");
-                }
-                return response.json();
-            })
             .then((data) => {
-                console.log(`Received data for vWAN Hubs for vWAN ID '${vwanId}':`, data);
-                const select = document.getElementById("vhub");
-                select.innerHTML = "";
-                data.forEach((vhub) => {
-                    console.log(`Adding vWAN Hub option: '${vhub.name}'`);
-                    const option = document.createElement("option");
-                    option.value = vhub.name;
-                    option.textContent = vhub.name;
-                    select.appendChild(option);
-                });
+                if (data.error) {
+                    console.error("Failed to migrate:", data.error);
+                } else {
+                    console.log("Migration successful:", data.result);
+                }
             })
-            .catch((error) => console.error("Failed to fetch vWAN Hubs:", error));
-    }
+            .catch((error) => console.error("Failed to send migration request:", error));
+        });
+        
+        function updateVnets(subscriptionId) {
+            fetch(`/vnets?subscription_id=${subscriptionId}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then((vnets) => {
+                    const select = document.getElementById("vnet");
+                    select.innerHTML = "";
+                    vnets.forEach((vnet) => {
+                        const option = document.createElement("option");
+                        option.value = vnet.id;
+                        option.textContent = vnet.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => console.error("Failed to fetch vNets:", error));
+        }
     
-</script>
+        function updateVirtualWans(subscriptionId) {
+            fetch(`/virtualwans?subscription_id=${subscriptionId}`)
+                .then((response) => response.json())
+                .then((virtualwans) => {
+                    const select = document.getElementById("vwan");
+                    select.innerHTML = "";
+                    virtualwans.forEach((vwan) => {
+                        const option = document.createElement("option");
+                        option.value = vwan.id;
+                        option.textContent = vwan.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => console.error("Failed to fetch Virtual WANs:", error));
+        }
+        
+        function updateVwanHubs(vwanId) {
+            const subscriptionId = document.getElementById("subscription").value;
+        
+            fetch(`/vwanhubs?vwan_id=${vwanId}&subscription_id=${subscriptionId}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch vWAN Hubs");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    const select = document.getElementById("vhub");
+                    select.innerHTML = "";
+                    data.forEach((vhub) => {
+                        const option = document.createElement("option");
+                        option.value = vhub.id;
+                        option.textContent = vhub.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch((error) => console.error("Failed to fetch vWAN Hubs:", error));
+        }
+        
+    </script>
+    
 {% endblock %}

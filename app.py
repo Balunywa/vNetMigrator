@@ -46,30 +46,27 @@ def get_subscriptions():
 @app.route('/vnets', methods=['GET'])
 def get_vnets():
     subscription_id = request.args.get('subscription_id')
-    vnets = resource_client.resources.list(filter=f"subscriptionId eq '{subscription_id}' and resourceType eq 'Microsoft.Network/virtualNetworks'")
-    result = []
-    for vnet in vnets:
-        result.append({
-            'id': vnet.id,
-            'name': vnet.name,
-            'resource_group': vnet.id.split('/')[4]
-        })
+    resources = resource_client.resources.list_by_resource_group(subscription_id)
+    result = [resource for resource in resources if resource.type == 'Microsoft.Network/virtualNetworks']
     return jsonify(result)
 
 
 @app.route('/virtualwans', methods=['GET'])
 def get_virtual_wans():
     subscription_id = request.args.get('subscription_id')
+    vwan_name = request.args.get('vwan_name')
     virtual_wans = network_client.virtual_wans.list()
     result = []
     for vwan in virtual_wans:
-        result.append({
-            'id': vwan.id,
-            'name': vwan.name,
-            'resource_group': vwan.id.split('/')[4],
-            'location': vwan.location
-        })
+        if vwan.name == vwan_name:  # Add this line to filter by vWAN name
+            result.append({
+                'id': vwan.id,
+                'name': vwan.name,
+                'resource_group': vwan.id.split('/')[4],
+                'location': vwan.location
+            })
     return jsonify(result)
+
 
 @app.route('/vwanhubs', methods=['GET'])
 def get_vwan_hubs_endpoint():
